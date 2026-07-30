@@ -1,0 +1,89 @@
+{
+  "_meta": {
+    "purpose": "Deterministic, regex/keyword-only checks run in plain JavaScript against the user's rough prompt text before any Gemini Nano call. No rule here requires model judgment.",
+    "sync": "Hand-mirrored from ../knowledge/patterns.md, core.md, grounding.md, techniques.md. Do not treat as auto-generated. Run scripts/validate-runtime.js after editing.",
+    "detectTypes": {
+      "verbAbsence": "fails (rule fires) if none of `verbs` appear as a whole word in the text",
+      "regex": "fires if `pattern` (with optional `flags`) matches the text",
+      "keywordAbsence": "fires if none of `keywords` appear in the text",
+      "keywordPresence": "fires if any of `keywords` appear in the text",
+      "keywordPresenceWithoutPhrase": "fires if any of `keywords` appear AND `excludePhrase` does not appear"
+    }
+  },
+  "rules": {
+    "no_task_verb": {
+      "description": "No recognized action verb found in the task text.",
+      "sourceFile": "knowledge/core.md",
+      "detect": {
+        "type": "verbAbsence",
+        "verbs": ["draft", "write", "summarize", "summarise", "compare", "classify", "rewrite", "explain", "translate", "list", "generate", "analyze", "analyse", "fix", "debug", "implement", "design", "outline", "create", "edit", "shorten", "expand", "review", "critique", "plan"]
+      },
+      "fragmentId": "fix_no_task_verb"
+    },
+    "multiple_tasks": {
+      "description": "Two distinct task verbs joined by a conjunction, suggesting a bundled multi-task request.",
+      "sourceFile": "knowledge/core.md",
+      "detect": {
+        "type": "regex",
+        "pattern": "\\b(and then|and also)\\b",
+        "flags": "i"
+      },
+      "fragmentId": "fix_multiple_tasks"
+    },
+    "no_format_specified": {
+      "description": "No length, structure, or format keyword present anywhere in the prompt.",
+      "sourceFile": "knowledge/patterns.md",
+      "detect": {
+        "type": "keywordAbsence",
+        "keywords": ["word", "words", "sentence", "sentences", "paragraph", "paragraphs", "bullet", "bullets", "list", "table", "heading", "headings", "format", "length", "characters"]
+      },
+      "fragmentId": "fix_no_format_specified"
+    },
+    "vague_adjective": {
+      "description": "A vague, unmeasurable quality adjective is used without a concrete spec.",
+      "sourceFile": "knowledge/patterns.md",
+      "detect": {
+        "type": "keywordPresence",
+        "keywords": ["better", "professional", "engaging", "good", "nice", "clean", "polished", "compelling"]
+      },
+      "fragmentId": "fix_vague_adjective"
+    },
+    "unresolved_placeholder": {
+      "description": "A bracketed placeholder like [industry] or [product] was left unfilled.",
+      "sourceFile": "knowledge/grounding.md",
+      "detect": {
+        "type": "regex",
+        "pattern": "\\[[a-zA-Z0-9_ ]+\\]"
+      },
+      "fragmentId": "fix_unresolved_placeholder"
+    },
+    "assumed_shared_history": {
+      "description": "The request assumes prior context or conversation history the model wasn't actually given.",
+      "sourceFile": "knowledge/patterns.md",
+      "detect": {
+        "type": "keywordPresence",
+        "keywords": ["continue where we left off", "like before", "as we discussed", "as previously mentioned", "like last time"]
+      },
+      "fragmentId": "fix_assumed_shared_history"
+    },
+    "invites_fabrication": {
+      "description": "Open-ended appeal to authority or an unsourced factual/statistical claim.",
+      "sourceFile": "knowledge/grounding.md",
+      "detect": {
+        "type": "keywordPresence",
+        "keywords": ["what do experts say", "according to studies", "the statistics show", "studies show", "research shows"]
+      },
+      "fragmentId": "grounding_fabrication_guard"
+    },
+    "missing_stepwise_reasoning": {
+      "description": "Comparison, logic, or decision language present without a step-by-step instruction.",
+      "sourceFile": "knowledge/techniques.md",
+      "detect": {
+        "type": "keywordPresenceWithoutPhrase",
+        "keywords": ["compare", "vs", "versus", "pros and cons", "which is better", "should i"],
+        "excludePhrase": "step by step"
+      },
+      "fragmentId": "fix_missing_stepwise_reasoning"
+    }
+  }
+}

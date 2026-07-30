@@ -1,0 +1,169 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 16px;
+  font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+  background: #1b1b1f;
+  color: #e8e8ea;
+}
+
+header {
+  margin-bottom: 20px;
+}
+
+h1 {
+  font-size: 18px;
+  margin: 0;
+}
+
+.subtitle {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: #9a9aa2;
+}
+
+#system-check {
+  background: #26262c;
+  border-radius: 8px;
+  padding: 14px;
+}
+
+#system-check h2,
+#main-panel h2 {
+  font-size: 13px;
+  margin: 0 0 10px;
+  color: #b7b7bf;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+#main-panel {
+  background: #26262c;
+  border-radius: 8px;
+  padding: 14px;
+  margin-top: 12px;
+}
+
+#refiner-panel {
+  background: #26262c;
+  border-radius: 8px;
+  padding: 14px;
+  margin-top: 12px;
+}
+
+#refiner-panel h2,
+#refiner-panel label {
+  display: block;
+}
+
+#refiner-panel h2 {
+  font-size: 13px;
+  margin: 0 0 10px;
+  color: #b7b7bf;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+#refiner-panel label {
+  font-size: 12px;
+  color: #b7b7bf;
+  margin: 10px 0 6px;
+}
+
+textarea {
+  width: 100%;
+  resize: vertical;
+  border: 1px solid #4a4a52;
+  border-radius: 6px;
+  padding: 8px;
+  background: #1b1b1f;
+  color: #e8e8ea;
+  font: inherit;
+  line-height: 1.4;
+}
+
+#refine-btn {
+  margin-top: 10px;
+}
+
+#refiner-status {
+  min-height: 17px;
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: #9a9aa2;
+}
+
+#site-detail {
+  font-size: 12px;
+  color: #9a9aa2;
+  margin: 0;
+}
+
+.dot[data-state="claude"],
+.dot[data-state="chatgpt"],
+.dot[data-state="gemini"],
+.dot[data-state="grok"] {
+  background: #4caf6d;
+}
+
+.dot[data-state="unsupported"] {
+  background: #d95c4a;
+}
+
+.status-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 6px;
+  font-size: 14px;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #6b6b73;
+  flex-shrink: 0;
+}
+
+.dot[data-state="available"] {
+  background: #4caf6d;
+}
+
+.dot[data-state="downloadable"],
+.dot[data-state="downloading"] {
+  background: #d9a441;
+}
+
+.dot[data-state="unavailable"] {
+  background: #d95c4a;
+}
+
+#status-detail {
+  font-size: 12px;
+  color: #9a9aa2;
+  margin: 0 0 10px;
+  line-height: 1.4;
+}
+
+button {
+  background: #4a7dfc;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 14px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+button:hover:not(:disabled) {
+  background: #3a6ce0;
+}

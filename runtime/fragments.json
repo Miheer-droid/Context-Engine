@@ -1,0 +1,59 @@
+{
+  "_meta": {
+    "purpose": "Short, imperative instruction strings that refiner.js concatenates into a session.prompt() call. Only the fragments matching a fired rule id or an active context flag get included in any single call — never the whole file.",
+    "sync": "Hand-mirrored from ../knowledge/. Do not treat as auto-generated. Run scripts/validate-runtime.js after editing.",
+    "triggeredByFormat": "Plain string = matches a rule id in rules.json. 'context:X' = matches a context flag refiner.js sets itself (e.g. scraper.js found reference text), not a text-pattern rule."
+  },
+  "fragments": {
+    "fix_no_task_verb": {
+      "text": "State the task as a direct instruction with a clear action verb (e.g., draft, summarize, compare, rewrite, explain).",
+      "sourceFile": "knowledge/core.md",
+      "triggeredBy": ["no_task_verb"]
+    },
+    "fix_multiple_tasks": {
+      "text": "This request bundles more than one task. Handle only the first task now, and note the second as a likely follow-up prompt.",
+      "sourceFile": "knowledge/core.md",
+      "triggeredBy": ["multiple_tasks"]
+    },
+    "fix_no_format_specified": {
+      "text": "Specify the exact output length and structure (e.g., a word or sentence count, headings, a bullet list, or plain prose).",
+      "sourceFile": "knowledge/patterns.md",
+      "triggeredBy": ["no_format_specified"]
+    },
+    "fix_vague_adjective": {
+      "text": "Replace the vague quality word with a concrete, checkable requirement (e.g., a length limit, a required tone, or a specific structure).",
+      "sourceFile": "knowledge/patterns.md",
+      "triggeredBy": ["vague_adjective"]
+    },
+    "fix_unresolved_placeholder": {
+      "text": "This request contains an unresolved placeholder. Ask the user for the missing value rather than guessing it.",
+      "sourceFile": "knowledge/grounding.md",
+      "triggeredBy": ["unresolved_placeholder"]
+    },
+    "fix_assumed_shared_history": {
+      "text": "Restate the relevant prior decisions or context explicitly instead of assuming shared history the model may not have.",
+      "sourceFile": "knowledge/patterns.md",
+      "triggeredBy": ["assumed_shared_history"]
+    },
+    "fix_missing_stepwise_reasoning": {
+      "text": "Think through this step by step before giving the final answer.",
+      "sourceFile": "knowledge/techniques.md",
+      "triggeredBy": ["missing_stepwise_reasoning"]
+    },
+    "grounding_fabrication_guard": {
+      "text": "Use only information you are highly confident is accurate. If you are not certain, say so explicitly rather than guessing. Do not fabricate sources, quotes, or statistics.",
+      "sourceFile": "knowledge/grounding.md",
+      "triggeredBy": ["invites_fabrication"]
+    },
+    "grounding_scope_lock": {
+      "text": "Base the answer only on the reference material provided below. Do not add outside information. If the material doesn't contain the answer, say so.",
+      "sourceFile": "knowledge/grounding.md",
+      "triggeredBy": ["context:hasReferenceMaterial"]
+    },
+    "fewshot_hint": {
+      "text": "If a specific output pattern is expected, show 2-3 example input/output pairs before asking for the real output.",
+      "sourceFile": "knowledge/techniques.md",
+      "triggeredBy": ["manual"]
+    }
+  }
+}

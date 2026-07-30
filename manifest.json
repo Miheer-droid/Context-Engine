@@ -1,0 +1,16 @@
+{
+  "manifest_version": 3,
+  "name": "Context-Engine",
+  "version": "0.1.0",
+  "description": "Local AI prompt refiner for ChatGPT, Claude, Gemini, and Grok. Runs fully on-device.",
+  "permissions": ["sidePanel", "scripting", "activeTab", "tabs"],
+  "action": {
+    "default_title": "Open Context-Engine"
+  },
+  "side_panel": {
+    "default_path": "sidepanel.html"
+  },
+  "background": {
+    "service_worker": "background.js"
+  }
+}

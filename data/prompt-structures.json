@@ -1,0 +1,45 @@
+{
+  "_meta": {
+    "purpose": "Per-site wire-format hints only — how to wrap an already-assembled, model-agnostic prompt for a specific target site. Never put content-quality principles here; those belong in knowledge/.",
+    "sync": "Hand-curated from each vendor's own prompting docs. Update only when a vendor's documented structure actually changes, never speculatively.",
+    "keys": "Must match the site.id values returned by detector.js's detectSite()."
+  },
+  "sites": {
+    "claude": {
+      "label": "Claude",
+      "format": "xml-tags",
+      "description": "Wrap components in XML tags, e.g. <task>...</task><context>...</context><format>...</format>, per Claude's documented prompting guide.",
+      "displayHint": "Claude's XML-tag prompt structure will be used."
+    },
+    "chatgpt": {
+      "label": "ChatGPT",
+      "format": "markdown-headers",
+      "description": "Use Markdown headers to separate components, e.g. ## Task / ## Context / ## Format.",
+      "displayHint": "ChatGPT's Markdown-header prompt structure will be used."
+    },
+    "gemini": {
+      "label": "Gemini",
+      "format": "markdown-headers",
+      "description": "Use concise Markdown headers or bold labels (Task: / Context: / Format:); Gemini's own guide favors natural, conversational structuring over heavy markup.",
+      "displayHint": "Gemini's prompt structure will be used."
+    },
+    "grok": {
+      "label": "Grok",
+      "format": "plain-labeled",
+      "description": "Use plain labeled sections (Task: / Context: / Format:) without XML or Markdown markup.",
+      "displayHint": "Grok's prompt structure will be used."
+    },
+    "unsupported": {
+      "label": "Unsupported site",
+      "format": "generic",
+      "description": "Fall back to knowledge/templates.md's Template 2 skeleton (Role/Task/Context/Format) with plain labeled sections.",
+      "displayHint": "This site isn't recognized. A generic prompt structure will be used instead."
+    },
+    "none": {
+      "label": "No active tab",
+      "format": "none",
+      "description": "No target site detected yet; there is nothing to format.",
+      "displayHint": "No active browser tab was found."
+    }
+  }
+}

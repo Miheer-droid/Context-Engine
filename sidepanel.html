@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Context-Engine</title>
+  <link rel="stylesheet" href="sidepanel.css" />
+</head>
+<body>
+  <header>
+    <h1>Context-Engine</h1>
+    <p class="subtitle">Local prompt refiner</p>
+  </header>
+
+  <section id="system-check">
+    <h2>On-device AI status</h2>
+    <p class="status-line">
+      <span class="dot" id="status-dot"></span>
+      <span id="status-text">Checking...</span>
+    </p>
+    <p id="status-detail"></p>
+    <button id="enable-btn" hidden>Enable Gemini Nano</button>
+  </section>
+
+  <section id="main-panel" hidden>
+    <h2>Active site</h2>
+    <p class="status-line">
+      <span class="dot" id="site-dot"></span>
+      <span id="site-text">Checking...</span>
+    </p>
+    <p id="site-detail"></p>
+  </section>
+
+  <section id="refiner-panel" hidden>
+    <h2>Refine a prompt</h2>
+    <label for="rough-prompt">Rough prompt</label>
+    <textarea id="rough-prompt" rows="7" placeholder="Paste or type the prompt you want to improve."></textarea>
+    <button id="refine-btn">Refine prompt</button>
+    <p id="refiner-status" aria-live="polite"></p>
+    <label for="refined-prompt">Refined prompt</label>
+    <textarea id="refined-prompt" rows="10" readonly placeholder="Your improved prompt will appear here."></textarea>
+  </section>
+
+  <script src="detector.js"></script>
+  <script src="refiner.js"></script>
+  <script src="sidepanel.js"></script>
+</body>
+</html>
