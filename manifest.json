@@ -4,6 +4,13 @@
   "version": "0.1.0",
   "description": "Local AI prompt refiner for ChatGPT, Claude, Gemini, and Grok. Runs fully on-device.",
   "permissions": ["sidePanel", "scripting", "activeTab", "tabs"],
+  "host_permissions": [
+    "https://claude.ai/*",
+    "https://chatgpt.com/*",
+    "https://chat.openai.com/*",
+    "https://gemini.google.com/*",
+    "https://grok.com/*"
+  ],
   "action": {
     "default_title": "Open Context-Engine"
   },

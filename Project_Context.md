@@ -22,9 +22,9 @@ A Chrome MV3 sidepanel extension that improves the user's prompt before they sen
    ```
 5. Module breakdown locked in:
    - UI Layer: sidepanel.html/css, sidepanel.js (now also fetches `data/prompt-structures.json` for its site-description text — no more hardcoded duplicate of that text)
-   - Data Collection Layer: detector.js ✅ (hostname → site match, built), dom-reader.js (continuous chat extraction, not built), scraper.js (reference tab scraping, 3000 char cap, not built)
-   - Processing Layer: ai-availability.js logic (currently inline in sidepanel.js), refiner.js (not built — see `knowledge/SKILL.md` for its intended runtime flow once it exists), summarizer.js (not built), template-engine.js (not built)
-   - Execution Layer: injector.js (not built) — dispatches native bubbling input event into target site's prompt box
+   - Data Collection Layer: detector.js ✅ (hostname → site match) and dom-reader.js ✅ (reads the active supported chat through `chrome.scripting`, then reports fresh versus continuous dialogue). scraper.js is intentionally out of scope for this MVP because arbitrary reference tabs need broader host access.
+   - Processing Layer: ai-availability.js logic (currently inline in sidepanel.js), refiner.js ✅ (guided Prompt API refinement), summarizer.js ✅ (one-sentence current-chat summary via the Summarizer API), template-engine.js ✅ (per-site wire formatting only).
+   - Execution Layer: injector.js ✅ (uses chrome.scripting.executeScript to dispatch native input/change events into the target site's prompt box). Contenteditable prompts are inserted line by line so complete multiline prompts survive. Never sends Enter/submit; the user always presses Enter manually.
    - Storage Sandbox: plain in-memory JS variables (no separate file yet, trivial when needed)
    - Knowledge Layer (new): `knowledge/` (8 markdown files, source of truth for prompt-quality principles) → `runtime/rules.json` + `runtime/fragments.json` (hand-mirrored deterministic checks + instruction fragments, what `refiner.js` will actually read) → `scripts/validate-runtime.js` (consistency check, zero npm dependencies, run with `node scripts/validate-runtime.js`)
    - Data: `data/prompt-structures.json` ✅ built — per-site wire format only, separate axis from the Knowledge Layer above
@@ -32,21 +32,21 @@ A Chrome MV3 sidepanel extension that improves the user's prompt before they sen
 ## Build order (6-step framework applied to this project)
 1. ✅ Empty extension shell (manifest, sidepanel loads)
 2. ✅ Site detection (detector.js — hostname → known site or "unsupported")
-3. 🟡 `prompt-structures.json` ✅ built and wired into sidepanel.js's UI text. `template-engine.js` itself — the module that will use this file to actually wrap an assembled prompt — is still not built. Knowledge Layer (`knowledge/` + `runtime/` + `scripts/validate-runtime.js`) also built ahead of schedule since it's an independent block, same reasoning as step 2.
+3. ✅ `prompt-structures.json` and `template-engine.js` — the finished refined prompt is wrapped just before preview/injection: XML tags for Claude, Markdown headings for ChatGPT/Gemini, and plain labels for Grok. Knowledge Layer (`knowledge/` + `runtime/` + `scripts/validate-runtime.js`) remains separate from this wire-format layer.
 4. ✅ Gemini Nano availability check + download trigger (done, verified working)
-5. ✅ Wire an actual `session.prompt()` call into the panel (`refiner.js` — real refinement conversation). `refiner.js` runs the deterministic runtime rules, includes only their matching instruction fragments, and keeps one in-memory Prompt API session with a five-turn cap. The panel now accepts a rough prompt and displays the on-device refined result.
-6. ⬜ Reference-tab scraper (scraper.js)
-7. ⬜ Continuous-chat history reader + Summarizer API (dom-reader.js, summarizer.js)
-8. ⬜ Preview/approval card + injector.js (paste into target site)
+5. ✅ Wire an actual `session.prompt()` call into the panel (`refiner.js` — guided refinement conversation). `refiner.js` runs deterministic runtime rules, includes only matching instruction fragments, asks one high-value clarification question at a time, and keeps one in-memory Prompt API session with a five-call cap.
+6. — Reference-tab scraper (`scraper.js`) is out of scope for this MVP. It is not implemented and must not be added without revisiting host-permission requirements.
+7. ✅ Continuous-chat history reader + Summarizer API (`dom-reader.js`, `summarizer.js`). The panel immediately reports that it is checking chat context; a fresh chat proceeds normally, a short continuous chat supplies a one-sentence local topic summary to refiner.js, and a complex history surfaces a clarifying prompt instead of guessing.
+8. ✅ Preview/approval card + injector.js (paste into target site). After the self-check loop reports the prompt is sufficient, `refiner.js` produces a `{summary, refinedPrompt}` object; `sidepanel.js` renders it as a "Prompt Ready" card with Apply Prompt / Refine Again. Apply Prompt calls `injector.js`, which uses `chrome.scripting.executeScript` to clear and insert into the target site's prompt box (contenteditable via `execCommand`, plain `<textarea>` via the framework's native value setter). Never dispatches Enter or a submit event — the user always sends manually.
 9. ⬜ In-memory session store wiring, confirm wipe-on-close
 10. ⬜ End-to-end test pass across supported/unsupported sites
 ## Verified working on the developer's machine
 - Chrome build supports the Prompt API.
 - `chrome://on-device-internals` confirms: Device performance class = Very High, Gemini Nano downloaded and Ready.
 - Extension's own sidepanel independently confirms `LanguageModel.availability()` → `"available"`.
-- Files delivered so far: `manifest.json`, `background.js`, `detector.js`, `sidepanel.html`, `sidepanel.css`, `sidepanel.js`, `knowledge/` (8 files), `runtime/rules.json`, `runtime/fragments.json`, `data/prompt-structures.json`, `scripts/validate-runtime.js` (all in the `context-engine/` folder the user is running locally). `scripts/validate-runtime.js` passes clean as of this update — run `node scripts/validate-runtime.js` from the extension root any time `runtime/*.json` is hand-edited.
+- Files delivered so far: `manifest.json`, `background.js`, `detector.js`, `sidepanel.html`, `sidepanel.css`, `sidepanel.js`, `refiner.js`, `template-engine.js`, `dom-reader.js`, `summarizer.js`, `injector.js`, `knowledge/` (8 files), `runtime/rules.json`, `runtime/fragments.json`, `data/prompt-structures.json`, and `scripts/validate-runtime.js`. `scripts/validate-runtime.js` passes clean as of this update — run `node scripts/validate-runtime.js` from the extension root any time `runtime/*.json` is hand-edited. Existing host permissions cover only the supported AI sites; no broader permission is present or required by this MVP.
 ## Not yet built
-`template-engine.js`, `dom-reader.js`, `scraper.js`, `summarizer.js`, `injector.js` — steps 6 through 8 above. Next planned step: `scraper.js` (step 6).
+No remaining module from the original MVP build order is planned. `scraper.js` remains deliberately absent. Remaining work is the in-memory-session verification and an end-to-end pass across supported and unsupported sites.
  
 ## Working style notes for future chats
 - User is a "vibe coder" — explain technical steps in plain, simple terms (as if to a 10-year-old) before/alongside code.

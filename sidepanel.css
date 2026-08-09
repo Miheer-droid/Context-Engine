@@ -54,6 +54,49 @@ h1 {
   margin-top: 12px;
 }
 
+<<<<<<< HEAD
+=======
+#conversation-history {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 260px;
+  overflow-y: auto;
+  margin: 0 0 12px;
+  padding-right: 2px;
+}
+
+.conversation-message {
+  max-width: 90%;
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 13px;
+  line-height: 1.4;
+  white-space: pre-wrap;
+}
+
+.conversation-message.user {
+  align-self: flex-end;
+  background: #365da8;
+}
+
+.conversation-message.nano {
+  align-self: flex-start;
+  background: #1b1b1f;
+  border: 1px solid #4a4a52;
+}
+
+#question-step {
+  border-left: 2px solid #4a7dfc;
+  padding-left: 10px;
+}
+
+#clarifying-question {
+  margin: 0 0 10px;
+  line-height: 1.4;
+}
+
+>>>>>>> ef30195 (auto-inject prompt)
 #refiner-panel h2,
 #refiner-panel label {
   display: block;

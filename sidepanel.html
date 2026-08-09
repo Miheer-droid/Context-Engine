@@ -30,17 +30,47 @@
     <p id="site-detail"></p>
   </section>
 
+  <section id="chat-context-panel" hidden>
+    <h2>Current chat</h2>
+    <p id="chat-context-text" aria-live="polite"></p>
+  </section>
+
   <section id="refiner-panel" hidden>
     <h2>Refine a prompt</h2>
     <label for="rough-prompt">Rough prompt</label>
     <textarea id="rough-prompt" rows="7" placeholder="Paste or type the prompt you want to improve."></textarea>
     <button id="refine-btn">Refine prompt</button>
     <p id="refiner-status" aria-live="polite"></p>
-    <label for="refined-prompt">Refined prompt</label>
-    <textarea id="refined-prompt" rows="10" readonly placeholder="Your improved prompt will appear here."></textarea>
+  </section>
+
+  <section id="question-panel" hidden>
+    <h3>One quick question</h3>
+    <p id="question-text"></p>
+    <textarea id="question-answer" rows="3" placeholder="Your answer"></textarea>
+    <button id="answer-btn">Continue</button>
+  </section>
+
+  <section id="preview-card" hidden>
+    <h2><span aria-hidden="true">✓</span> Prompt Ready</h2>
+
+    <h3>Summary</h3>
+    <p id="preview-summary"></p>
+
+    <h3>Prompt Preview</h3>
+    <textarea id="preview-prompt" rows="10" readonly></textarea>
+
+    <div class="preview-actions">
+      <button id="apply-prompt-btn">Apply Prompt</button>
+      <button id="refine-again-btn">Refine Again</button>
+    </div>
+    <p id="apply-status" aria-live="polite"></p>
   </section>
 
   <script src="detector.js"></script>
+  <script src="injector.js"></script>
+  <script src="template-engine.js"></script>
+  <script src="dom-reader.js"></script>
+  <script src="summarizer.js"></script>
   <script src="refiner.js"></script>
   <script src="sidepanel.js"></script>
 </body>

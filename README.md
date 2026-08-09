@@ -8,6 +8,16 @@ The goal is to make better prompting automatic—without requiring users to beco
 
 ---
 
+## Current implementation status
+
+The extension currently supports Claude, ChatGPT, Gemini, and Grok. It asks guided clarification questions locally through Gemini Nano, then previews a refined prompt before insertion. The finished prompt is wire-formatted for the active site: XML tags for Claude, Markdown headings for ChatGPT and Gemini, and plain labels for Grok.
+
+For an existing supported chat, the extension first displays that it is checking the conversation. A short continuous chat is summarized locally into one sentence and supplied to the refiner as context; a fresh chat follows the normal refinement flow; a complex history asks the user to state the next task rather than guessing.
+
+Apply Prompt inserts the complete multiline preview into the target composer and dispatches input events. It never submits the message; the user always reviews and sends it manually. There is no cloud service, persistent storage, or reference-tab scraper in this MVP.
+
+---
+
 # Features
 
 - Prompt refinement before submission
@@ -17,6 +27,7 @@ The goal is to make better prompting automatic—without requiring users to beco
 - Structured prompt templates
 - Lightweight browser extension architecture
 - Model-agnostic design (works with any LLM)
+- One-click "Apply Prompt" directly into the target site's chat box (user still sends manually)
 
 ---
 
@@ -90,7 +101,13 @@ Prompt Refiner
 Enhanced Prompt
       │
       ▼
-Target LLM
+Preview Card (user reviews summary + full prompt)
+      │
+      ▼
+Apply Prompt (injector.js clears + inserts into target site's input)
+      │
+      ▼
+Target LLM (user presses Enter manually — never auto-sent)
 ```
 
 ---
@@ -106,6 +123,10 @@ Project_Context.md       # AI project context
 background.js
 detector.js
 refiner.js
+injector.js
+template-engine.js
+dom-reader.js
+summarizer.js
 manifest.json
 
 sidepanel.html
@@ -217,8 +238,9 @@ Unlike the README, this file is intended for AI coding assistants and documents:
 2. Analyze its intent.
 3. Retrieve relevant knowledge.
 4. Apply runtime rules.
-5. Build a refined prompt.
-6. Return the improved prompt to the user.
+5. Build a refined prompt through a guided question-and-answer loop.
+6. Show the user a preview card (summary + full refined prompt).
+7. On "Apply Prompt", insert the refined prompt directly into the detected site's chat input — the user still presses Enter themselves.
 
 ---
 
@@ -241,6 +263,7 @@ Current focus:
 - Runtime refinement engine
 - Prompt quality improvements
 - Browser extension integration
+- Direct prompt injection into the target site (no manual copy-paste)
 
 Future plans may include:
 

@@ -3,11 +3,29 @@ const statusText = document.getElementById("status-text");
 const statusDetail = document.getElementById("status-detail");
 const enableBtn = document.getElementById("enable-btn");
 const mainPanel = document.getElementById("main-panel");
+const chatContextPanel = document.getElementById("chat-context-panel");
+const chatContextText = document.getElementById("chat-context-text");
 const refinerPanel = document.getElementById("refiner-panel");
 const roughPrompt = document.getElementById("rough-prompt");
 const refineBtn = document.getElementById("refine-btn");
 const refinerStatus = document.getElementById("refiner-status");
-const refinedPrompt = document.getElementById("refined-prompt");
+
+const questionPanel = document.getElementById("question-panel");
+const questionText = document.getElementById("question-text");
+const questionAnswer = document.getElementById("question-answer");
+const answerBtn = document.getElementById("answer-btn");
+
+const previewCard = document.getElementById("preview-card");
+const previewSummary = document.getElementById("preview-summary");
+const previewPrompt = document.getElementById("preview-prompt");
+const applyPromptBtn = document.getElementById("apply-prompt-btn");
+const refineAgainBtn = document.getElementById("refine-again-btn");
+const applyStatus = document.getElementById("apply-status");
+
+// Holds the most recent refinement result so "Apply Prompt" has something
+// to send even though the visible preview textarea is read-only. Lives only
+// in memory, consistent with the project's volatile-session-only storage rule.
+let currentRefinedPrompt = null;
 
 // Declaring the language explicitly avoids the "no output language specified"
 // warning and matches what LanguageModel.create() will be called with later.
@@ -87,6 +105,8 @@ const siteDetail = document.getElementById("site-detail");
 // data/prompt-structures.json. It now comes from that file directly, so
 // there is exactly one place that knows what "Claude" means structurally.
 let siteStructures = null;
+let activeSiteId = "none";
+let chatContextRequestId = 0;
 
 async function loadSiteStructures() {
   try {
@@ -121,9 +141,45 @@ async function refreshActiveSite() {
   }
 
   const site = detectSite(hostname);
+  activeSiteId = site.id;
   siteDot.dataset.state = site.id;
   siteText.textContent = site.label;
   siteDetail.textContent = (siteStructures[site.id] && siteStructures[site.id].displayHint) || "";
+  refreshChatContext(site);
+}
+
+async function refreshChatContext(site) {
+  const requestId = ++chatContextRequestId;
+  setChatContextSummary("");
+  chatContextPanel.hidden = true;
+
+  if (!["claude", "chatgpt", "gemini", "grok"].includes(site.id)) {
+    return;
+  }
+
+  chatContextPanel.hidden = false;
+  chatContextText.textContent = "Checking whether this is a fresh chat or an existing conversation. Please wait...";
+
+  const dialogue = await readActiveChatDialogue();
+  if (requestId !== chatContextRequestId || activeSiteId !== site.id || dialogue.siteId !== site.id) {
+    return;
+  }
+
+  const context = await summarizeChatDialogue(dialogue);
+  if (requestId !== chatContextRequestId || activeSiteId !== site.id) {
+    return;
+  }
+
+  if (context.type === "none") {
+    chatContextText.textContent = "Fresh chat detected. No earlier conversation context will be added.";
+  } else if (context.type === "summary") {
+    setChatContextSummary(context.summary);
+    chatContextText.textContent = `Continuing this chat: ${context.summary}`;
+  } else if (context.type === "clarify") {
+    chatContextText.textContent = context.question;
+  } else {
+    chatContextText.textContent = context.reason;
+  }
 }
 
 chrome.tabs.onActivated.addListener(refreshActiveSite);
@@ -149,18 +205,80 @@ enableBtn.addEventListener("click", async () => {
   }
 });
 
-refineBtn.addEventListener("click", async () => {
+// Shared by "Refine prompt", "Continue" (answering a clarifying question),
+// and "Refine Again" - the only difference between them is what text is
+// being fed in next, not what work needs to happen.
+async function runRefinementTurn(userInput) {
   refineBtn.disabled = true;
-  refinerStatus.textContent = "Refining on this device...";
+  answerBtn.disabled = true;
+  applyPromptBtn.disabled = true;
+  refinerStatus.textContent = "Thinking on this device...";
+  applyStatus.textContent = "";
 
   try {
-    const result = await refinePrompt(roughPrompt.value);
-    refinedPrompt.value = result.refinedPrompt;
-    refinerStatus.textContent = `Refinement ${result.turn} of 5 complete.`;
+    const result = await startOrContinueRefinement(userInput);
+
+    if (result.type === "question") {
+      questionPanel.hidden = false;
+      previewCard.hidden = true;
+      questionText.textContent = result.question;
+      questionAnswer.value = "";
+      questionAnswer.focus();
+      refinerStatus.textContent = `Round ${result.userRounds} - one more detail needed.`;
+    } else {
+      questionPanel.hidden = true;
+      const formatted = await formatRefinedPromptForSite(activeSiteId, result);
+      currentRefinedPrompt = formatted.formattedPrompt;
+      previewSummary.textContent = result.summary;
+      previewPrompt.value = formatted.formattedPrompt;
+      previewCard.hidden = false;
+      refinerStatus.textContent = `Refinement complete after ${result.userRounds} round${result.userRounds === 1 ? "" : "s"}.`;
+    }
   } catch (err) {
     refinerStatus.textContent = err.message;
   } finally {
     refineBtn.disabled = false;
+    answerBtn.disabled = false;
+    applyPromptBtn.disabled = false;
+  }
+}
+
+refineBtn.addEventListener("click", () => {
+  resetRefinementSession();
+  questionPanel.hidden = true;
+  previewCard.hidden = true;
+  runRefinementTurn(roughPrompt.value);
+});
+
+refineAgainBtn.addEventListener("click", () => {
+  resetRefinementSession();
+  questionPanel.hidden = true;
+  previewCard.hidden = true;
+  runRefinementTurn(roughPrompt.value);
+});
+
+answerBtn.addEventListener("click", () => {
+  runRefinementTurn(questionAnswer.value);
+});
+
+applyPromptBtn.addEventListener("click", async () => {
+  if (!currentRefinedPrompt) {
+    applyStatus.textContent = "Refine a prompt first.";
+    return;
+  }
+
+  applyPromptBtn.disabled = true;
+  applyStatus.textContent = "Applying...";
+
+  try {
+    const result = await applyPromptToActiveTab(currentRefinedPrompt);
+    applyStatus.textContent = result.ok
+      ? "Applied. Review it in the page, then press Enter yourself to send it."
+      : `Could not apply automatically: ${result.reason}`;
+  } catch (err) {
+    applyStatus.textContent = `Could not apply automatically: ${err.message}`;
+  } finally {
+    applyPromptBtn.disabled = false;
   }
 });
 
