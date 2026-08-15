@@ -52,4 +52,4 @@ No remaining module from the original MVP build order is planned. `scraper.js` r
 - User is a "vibe coder" — explain technical steps in plain, simple terms (as if to a 10-year-old) before/alongside code.
 - Always give complete, runnable files — no placeholder comments, no pseudocode.
 - Always give exact local test steps (load unpacked, what to click, what output to expect).
-- Only one project worked on at a time — this doc is Context-Engine only, do not mix with the Repo-Graph project.
+- Only one project worked on at a time — this doc is Context-Engine only, do not mix with other project.
