@@ -300,12 +300,40 @@ When contributing:
 
 ---
 
-# License
+## System Requirements & Limitations
 
-Choose a license before public release (MIT is recommended for open-source projects).
+Context-Engine's refinement runs through Chrome's built-in Gemini Nano model. Before installing, check that your machine meets Chrome's requirements for it:
+
+- **Free disk space:** 22 GB+ on the volume holding your Chrome profile (the model is deleted again if free space drops below 10 GB)
+- **GPU:** more than 4 GB VRAM, **or**
+- **CPU fallback:** 16 GB+ RAM and 4+ CPU cores if there's no qualifying GPU
+- **Network:** an unmetered connection (Wi-Fi/ethernet) for the one-time model download — cellular/hotspot won't trigger it
+- **OS:** Windows 10/11, macOS 13+, or Linux
+- **Chrome:** a recent official Chrome build (not a Linux-distro Chromium repackage)
+
+If your device doesn't meet these, the side panel's on-device AI status will read:
+
+![Gemini Nano unavailable on this device](screenshots/gemini-nano-unavailable-status.png)
+
+This is a Chrome platform limit, not a bug in the extension — there is currently no workaround or fallback engine for devices below this bar.
+
+---
+
+## Installation (from GitHub, no Chrome Web Store listing)
+
+1. On the repo page, click **Code → Download ZIP**, then extract it.
+2. Go to `chrome://extensions`.
+3. Toggle **Developer mode** on, top-right corner.
+4. Click **Load unpacked** and select the extracted `Context-Engine-main` folder — the one that directly contains `manifest.json`.
+
+   ![chrome://extensions steps: navigate to the URL, enable Developer mode, click Load unpacked](screenshots/chrome-extensions-steps.png)
+
+5. The Context-Engine card appears.
+6. Visit a supported site (`claude.ai`, `chatgpt.com`, `gemini.google.com`, or `grok.com`) and click the Context-Engine toolbar icon to open the side panel.
+7. The panel checks Gemini Nano's status and downloads it if needed. This can take several minutes on Wi-Fi/ethernet the first time.
 
 ---
 
 ## Vision
 
-Context Engine aims to make high-quality prompting accessible to everyone by embedding prompt engineering best practices directly into the workflow, allowing users to focus on *what* they want to achieve instead of *how* to phrase it.
+Context-Engine aims to make high-quality prompting accessible to everyone by embedding prompt engineering best practices directly into the workflow, allowing users to focus on *what* they want to achieve instead of *how* to phrase it.
