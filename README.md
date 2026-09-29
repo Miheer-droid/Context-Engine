@@ -334,6 +334,44 @@ This is a Chrome platform limit, not a bug in the extension — there is current
 
 ---
 
+## Resetting Gemini Nano (optional, for testing only)
+
+This deletes Chrome's downloaded on-device model. It affects your whole Chrome browser, not just this extension, and requires Chrome to be fully closed first (check Task Manager for any leftover `chrome.exe` processes).
+
+```powershell
+$modelPath = "$env:LOCALAPPDATA\Google\Chrome\User Data\OptGuideOnDeviceModel"
+```
+Stores the model folder's path in a variable so you don't have to retype it in every command below.
+
+```powershell
+Test-Path $modelPath
+```
+Checks whether the model folder currently exists — `True` means it's present, `False` means it isn't.
+
+```powershell
+Get-ChildItem $modelPath -Recurse
+```
+Lists everything inside the folder, including the version-numbered subfolder and files like `weights.bin` — this is the actual model data.
+
+```powershell
+(Get-ChildItem $modelPath -Recurse -File | Measure-Object -Property Length -Sum).Sum / 1GB
+```
+Adds up the size of every file inside and shows the total in GB — confirms how much is actually downloaded (should be a few GB if present).
+
+```powershell
+Remove-Item $modelPath -Recurse -Force
+```
+Deletes the entire model folder and everything inside it. Chrome must be fully closed before running this.
+
+```powershell
+Test-Path $modelPath
+```
+Run again after deleting — should now return `False`, confirming removal.
+
+Reopen Chrome and visit the Context-Engine side panel on a supported site to trigger a fresh download.
+
+---
+
 ## Vision
 
 Context-Engine aims to make high-quality prompting accessible to everyone by embedding prompt engineering best practices directly into the workflow, allowing users to focus on *what* they want to achieve instead of *how* to phrase it.
