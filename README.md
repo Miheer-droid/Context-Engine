@@ -1,6 +1,6 @@
 # Context Engine
 
-> An AI-powered browser extension that transforms simple prompts into structured, context-aware prompts before they are sent to any LLM.
+> An AI-powered browser extension that transforms simple prompts into structured, context-aware prompts before they are sent to an LLM.
 
 Context Engine acts as an intelligent prompt refinement layer between the user and AI models. Instead of replacing the model, it improves the quality of prompts using a modular knowledge base, runtime rules, and reusable prompt structures.
 
@@ -26,7 +26,7 @@ Apply Prompt inserts the complete multiline preview into the target composer and
 - Runtime rule engine
 - Structured prompt templates
 - Lightweight browser extension architecture
-- Model-agnostic design (works with any LLM)
+- Works with ChatGPT, Claude, Gemini, and Grok
 - One-click "Apply Prompt" directly into the target site's chat box (user still sends manually)
 
 ---
@@ -119,6 +119,7 @@ context-engine/
 
 README.md                # Human documentation
 Project_Context.md       # AI project context
+LICENSE                  # MIT License
 
 background.js
 detector.js
@@ -137,6 +138,7 @@ knowledge/
 runtime/
 data/
 scripts/
+screenshots/
 ```
 
 ---
@@ -275,6 +277,15 @@ Future plans may include:
 
 ---
 
+# Feedback & Discussions
+
+Feedback and ideas for improvement are welcome.
+
+- **Questions, ideas, and general feedback:** [GitHub Discussions](https://github.com/Miheer-droid/Context-Engine/discussions)
+- **Bug reports:** [GitHub Issues](https://github.com/Miheer-droid/Context-Engine/issues)
+
+---
+
 # Contributing
 
 Contributions are welcome.
@@ -311,7 +322,16 @@ Context-Engine's refinement runs through Chrome's built-in Gemini Nano model. Be
 - **OS:** Windows 10/11, macOS 13+, or Linux
 - **Chrome:** a recent official Chrome build (not a Linux-distro Chromium repackage)
 
-If your device doesn't meet these, the side panel's on-device AI status will read:
+Other current limitations:
+
+- Desktop Chrome only
+- English only
+- Supported sites are claude.ai, chatgpt.com, gemini.google.com, and grok.com. These sites change their layouts often, so "Apply Prompt" may stop finding the input box until the selectors in `injector.js` are updated
+- Refinement is capped at 5 model calls per session
+- Very long chats are not summarized; the extension asks you to describe your next task instead
+- No reference-tab scraper in this MVP
+
+If your device doesn't meet the hardware requirements, the side panel's on-device AI status will read:
 
 ![Gemini Nano unavailable on this device](screenshots/gemini-nano-unavailable-status.png)
 
@@ -321,10 +341,10 @@ This is a Chrome platform limit, not a bug in the extension — there is current
 
 ## Installation (from GitHub, no Chrome Web Store listing)
 
-1. On the repo page, click **Code → Download ZIP**, then extract it.
+1. Download the code: either click **Code → Download ZIP** on the repo page, or download the latest ZIP from the [Releases](https://github.com/Miheer-droid/Context-Engine/releases) page. Extract it.
 2. Go to `chrome://extensions`.
 3. Toggle **Developer mode** on, top-right corner.
-4. Click **Load unpacked** and select the extracted `Context-Engine-main` folder — the one that directly contains `manifest.json`.
+4. Click **Load unpacked** and select the extracted folder that directly contains `manifest.json`.
 
    ![chrome://extensions steps: navigate to the URL, enable Developer mode, click Load unpacked](screenshots/chrome-extensions-steps.png)
 
@@ -369,6 +389,12 @@ Test-Path $modelPath
 Run again after deleting — should now return `False`, confirming removal.
 
 Reopen Chrome and visit the Context-Engine side panel on a supported site to trigger a fresh download.
+
+---
+
+## License
+
+Released under the [MIT License](LICENSE).
 
 ---
 
