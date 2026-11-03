@@ -195,14 +195,21 @@ async function startOrContinueRefinement(userInput) {
   userRounds += 1;
 
   if (!refinerSession) {
+    const createStartedAt = metricsNow();
     refinerSession = await LanguageModel.create(REFINER_MODEL_OPTIONS);
+    metricsRecordSessionCreate(metricsNow() - createStartedAt);
   }
 
+  const checkStartedAt = metricsNow();
   const checkRaw = await refinerSession.prompt(buildSelfCheckRequest(conversationLog));
+  metricsRecordSelfCheck(metricsNow() - checkStartedAt);
   refinementTurns += 1;
   const check = tryParseJson(checkRaw);
+  metricsRecordSelfCheckParse(check);
 
   const isSufficient = !check || check.sufficient !== false; // fail-open if model returns junk
+  // Metrics only: true when the model wanted another question but the turn cap forced the final step.
+  metricsRunSet({ hitTurnCap: !isSufficient && !(refinementTurns < MAX_REFINEMENT_TURNS) });
   if (!isSufficient && refinementTurns < MAX_REFINEMENT_TURNS) {
     conversationLog += `\nAssistant question: ${check.question}`;
     return { type: "question", question: check.question, turn: refinementTurns, userRounds };
@@ -212,9 +219,21 @@ async function startOrContinueRefinement(userInput) {
   const triggeredRuleIds = findTriggeredRuleIds(clean, rules);
   const instructions = selectFragments(rules, fragments, triggeredRuleIds, []);
 
+  const finalStartedAt = metricsNow();
   const finalRaw = await refinerSession.prompt(buildFinalRefinementRequest(conversationLog, instructions));
+  metricsRecordFinalRefine(metricsNow() - finalStartedAt);
   refinementTurns += 1;
-  const final = tryParseJson(finalRaw) || {};
+  const parsedFinal = tryParseJson(finalRaw);
+  const final = parsedFinal || {};
+
+  metricsRunSet({
+    triggeredRuleIds: triggeredRuleIds,
+    selectedFragmentCount: instructions.length,
+    finalParsedOk: metricsIsObject(parsedFinal),
+    finalUsedRawFallback: !final.refinedPrompt,
+    userRounds: userRounds,
+    refinementTurns: refinementTurns,
+  });
 
   return {
     type: "ready",

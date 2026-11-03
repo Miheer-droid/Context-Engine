@@ -22,6 +22,12 @@ const applyPromptBtn = document.getElementById("apply-prompt-btn");
 const refineAgainBtn = document.getElementById("refine-again-btn");
 const applyStatus = document.getElementById("apply-status");
 
+// Metrics controls (only shown when METRICS_ENABLED is true in metrics.js).
+const metricsPanel = document.getElementById("metrics-panel");
+const copyMetricsBtn = document.getElementById("copy-metrics-btn");
+const clearMetricsBtn = document.getElementById("clear-metrics-btn");
+const metricsStatus = document.getElementById("metrics-status");
+
 // Holds the most recent refinement result so "Apply Prompt" has something
 // to send even though the visible preview textarea is read-only. Lives only
 // in memory, consistent with the project's volatile-session-only storage rule.
@@ -160,15 +166,21 @@ async function refreshChatContext(site) {
   chatContextPanel.hidden = false;
   chatContextText.textContent = "Checking whether this is a fresh chat or an existing conversation. Please wait...";
 
+  const readStartedAt = metricsNow();
   const dialogue = await readActiveChatDialogue();
+  const readMs = metricsNow() - readStartedAt;
   if (requestId !== chatContextRequestId || activeSiteId !== site.id || dialogue.siteId !== site.id) {
     return;
   }
 
+  const summarizeStartedAt = metricsNow();
   const context = await summarizeChatDialogue(dialogue);
+  const summarizeMs = metricsNow() - summarizeStartedAt;
   if (requestId !== chatContextRequestId || activeSiteId !== site.id) {
     return;
   }
+
+  metricsRecordChatContext(site.id, dialogue, context, readMs, summarizeMs);
 
   if (context.type === "none") {
     chatContextText.textContent = "Fresh chat detected. No earlier conversation context will be added.";
@@ -233,6 +245,7 @@ async function runRefinementTurn(userInput) {
       previewPrompt.value = formatted.formattedPrompt;
       previewCard.hidden = false;
       refinerStatus.textContent = `Refinement complete after ${result.userRounds} round${result.userRounds === 1 ? "" : "s"}.`;
+      metricsFinishRun(result.refinedPrompt, formatted.formattedPrompt);
     }
   } catch (err) {
     refinerStatus.textContent = err.message;
@@ -244,6 +257,7 @@ async function runRefinementTurn(userInput) {
 }
 
 refineBtn.addEventListener("click", () => {
+  metricsStartRun(activeSiteId, false, roughPrompt.value);
   resetRefinementSession();
   questionPanel.hidden = true;
   previewCard.hidden = true;
@@ -251,6 +265,7 @@ refineBtn.addEventListener("click", () => {
 });
 
 refineAgainBtn.addEventListener("click", () => {
+  metricsStartRun(activeSiteId, true, roughPrompt.value);
   resetRefinementSession();
   questionPanel.hidden = true;
   previewCard.hidden = true;
@@ -270,17 +285,36 @@ applyPromptBtn.addEventListener("click", async () => {
   applyPromptBtn.disabled = true;
   applyStatus.textContent = "Applying...";
 
+  const applyStartedAt = metricsNow();
   try {
     const result = await applyPromptToActiveTab(currentRefinedPrompt);
+    metricsRecordInjection(activeSiteId, result.ok, result.reason, metricsNow() - applyStartedAt, currentRefinedPrompt.length);
     applyStatus.textContent = result.ok
       ? "Applied. Review it in the page, then press Enter yourself to send it."
       : `Could not apply automatically: ${result.reason}`;
   } catch (err) {
+    metricsRecordInjection(activeSiteId, false, err.message, metricsNow() - applyStartedAt, currentRefinedPrompt.length);
     applyStatus.textContent = `Could not apply automatically: ${err.message}`;
   } finally {
     applyPromptBtn.disabled = false;
   }
 });
+
+if (METRICS_ENABLED) {
+  metricsPanel.hidden = false;
+
+  copyMetricsBtn.addEventListener("click", async () => {
+    const outcome = await metricsCopyCsvToClipboard();
+    metricsStatus.textContent = outcome.ok
+      ? `Copied CSV with ${outcome.rows} row${outcome.rows === 1 ? "" : "s"}.`
+      : "Could not copy to the clipboard.";
+  });
+
+  clearMetricsBtn.addEventListener("click", () => {
+    metricsClear();
+    metricsStatus.textContent = "Metrics cleared.";
+  });
+}
 
 checkAvailability();
 loadSiteStructures();
