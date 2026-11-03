@@ -29,6 +29,7 @@ A Chrome MV3 sidepanel extension that improves the user's prompt before they sen
    - Knowledge Layer (new): `knowledge/` (8 markdown files, source of truth for prompt-quality principles) → `runtime/rules.json` + `runtime/fragments.json` (hand-mirrored deterministic checks + instruction fragments, what `refiner.js` will actually read) → `scripts/validate-runtime.js` (consistency check, zero npm dependencies, run with `node scripts/validate-runtime.js`)
    - Data: `data/prompt-structures.json` ✅ built — per-site wire format only, separate axis from the Knowledge Layer above
    - Background: `background.js` — now just `chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true })`. It previously held a dead, hand-duplicated copy of detector.js's site-matching logic that nothing called; removed. It also previously lacked this `setPanelBehavior` call, which meant clicking the toolbar icon didn't actually open the panel — fixed.
+   - Measurement Layer: `metrics.js` ✅ — in-memory run, chat-context and injection records, switchable with `METRICS_ENABLED`, copied as CSV from the side panel. Logs only counts, lengths, booleans, timings and rule ids, never text. Loaded first in `sidepanel.html`.
 ## Build order (6-step framework applied to this project)
 1. ✅ Empty extension shell (manifest, sidepanel loads)
 2. ✅ Site detection (detector.js — hostname → known site or "unsupported")
@@ -38,15 +39,15 @@ A Chrome MV3 sidepanel extension that improves the user's prompt before they sen
 6. — Reference-tab scraper (`scraper.js`) is out of scope for this MVP. It is not implemented and must not be added without revisiting host-permission requirements.
 7. ✅ Continuous-chat history reader + Summarizer API (`dom-reader.js`, `summarizer.js`). The panel immediately reports that it is checking chat context; a fresh chat proceeds normally, a short continuous chat supplies a one-sentence local topic summary to refiner.js, and a complex history surfaces a clarifying prompt instead of guessing.
 8. ✅ Preview/approval card + injector.js (paste into target site). After the self-check loop reports the prompt is sufficient, `refiner.js` produces a `{summary, refinedPrompt}` object; `sidepanel.js` renders it as a "Prompt Ready" card with Apply Prompt / Refine Again. Apply Prompt calls `injector.js`, which uses `chrome.scripting.executeScript` to clear and insert into the target site's prompt box (contenteditable via `execCommand`, plain `<textarea>` via the framework's native value setter). Never dispatches Enter or a submit event — the user always sends manually.
-9. ⬜ In-memory session store wiring, confirm wipe-on-close
-10. ⬜ End-to-end test pass across supported/unsupported sites
+9. ✅ In-memory session state, wipe-on-close confirmed. All state lives in side-panel JS variables; no storage APIs and no "storage" permission. Verified by closing and reopening the panel: inputs, preview and metrics were empty.
+10. ✅ End-to-end pass done on Claude, ChatGPT, Gemini, Grok and an unsupported site. Known issue (optional line, drop it if you prefer): direct insertion via Apply Prompt is not reliable on every supported site; left as is for this MVP.
 ## Verified working on the developer's machine
 - Chrome build supports the Prompt API.
 - `chrome://on-device-internals` confirms: Device performance class = Very High, Gemini Nano downloaded and Ready.
 - Extension's own sidepanel independently confirms `LanguageModel.availability()` → `"available"`.
 - Files delivered so far: `manifest.json`, `background.js`, `detector.js`, `sidepanel.html`, `sidepanel.css`, `sidepanel.js`, `refiner.js`, `template-engine.js`, `dom-reader.js`, `summarizer.js`, `injector.js`, `knowledge/` (8 files), `runtime/rules.json`, `runtime/fragments.json`, `data/prompt-structures.json`, and `scripts/validate-runtime.js`. `scripts/validate-runtime.js` passes clean as of this update — run `node scripts/validate-runtime.js` from the extension root any time `runtime/*.json` is hand-edited. Existing host permissions cover only the supported AI sites; no broader permission is present or required by this MVP.
-## Not yet built
-No remaining module from the original MVP build order is planned. `scraper.js` remains deliberately absent. Remaining work is the in-memory-session verification and an end-to-end pass across supported and unsupported sites.
+
+The MVP build order is complete.
  
 ## Working style notes for future chats
 - User is a "vibe coder" — explain technical steps in plain, simple terms (as if to a 10-year-old) before/alongside code.

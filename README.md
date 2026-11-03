@@ -64,6 +64,40 @@ Only the prompt becomes significantly better.
 
 ---
 
+# Screenshots
+
+The examples below were captured on Gemini (a supported site) and on Google Flow (an unsupported site).
+
+## A supported site: guided refinement
+
+The rough prompt is `explain how vaccines work`. The extension asks one clarifying question (answered here with `general public`) before it builds the refined prompt.
+
+![The extension asks one clarifying question about the audience](screenshots/02-clarifying-question.png)
+
+When refinement finishes, the Prompt Ready card shows a short summary and a preview in the active site's format (Markdown headings for Gemini). Apply Prompt places the text in the site's input box. The user still presses Enter to send it.
+
+![Prompt Ready card and the refined prompt placed in Gemini's input box](screenshots/03-prompt-ready-applied.png)
+
+## Before and after
+
+The same topic sent to Gemini twice, in separate chats: first as the rough prompt, then as the refined prompt.
+
+![Gemini's answer to the rough prompt](screenshots/04-rough-prompt-answer.png)
+
+![Gemini's answer to the refined prompt](screenshots/05-refined-prompt-answer.png)
+
+The answer to the refined prompt is much shorter. This is partly because the refined prompt asks for 1-2 sentences, a length limit that the refinement step added. Treat the pair as an illustration of how the prompt changes the answer, not as a measurement of answer quality.
+
+After the prompt is sent, the side panel recognises the existing chat and shows a one-sentence summary made by the on-device summarizer. These summaries are approximate.
+
+## An unsupported site
+
+On a site that is not Claude, ChatGPT, Gemini or Grok, the panel shows "Unsupported site" and uses a generic prompt structure. Refinement still works, but Apply Prompt does not insert text into the page, and no chat context is read.
+
+![The side panel on an unsupported site (Google Flow)](screenshots/01-unsupported-site.png)
+
+---
+
 # Project Goals
 
 The project is designed around five principles:
@@ -128,6 +162,7 @@ injector.js
 template-engine.js
 dom-reader.js
 summarizer.js
+metrics.js
 manifest.json
 
 sidepanel.html
@@ -191,6 +226,20 @@ Current examples include reusable prompt structures and metadata.
 Development utilities.
 
 Currently contains validation scripts for runtime configuration.
+
+---
+
+## screenshots/
+
+Images used in this README.
+
+---
+
+# Built-in metrics (optional)
+
+The side panel includes an optional measurement layer, `metrics.js`, used to evaluate the extension. It keeps timings, counts and true/false flags in memory only. It never records prompt, answer or chat text, nothing is written to disk, and closing the side panel clears it.
+
+The panel's Metrics section has **Copy metrics** (puts a CSV on the clipboard) and **Clear metrics**. To turn the layer off and hide those buttons, set `METRICS_ENABLED = false` at the top of `metrics.js`.
 
 ---
 
