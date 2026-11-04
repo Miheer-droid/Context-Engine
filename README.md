@@ -35,66 +35,100 @@ Apply Prompt inserts the complete multiline preview into the target composer and
 
 Most users ask AI models vague or incomplete questions.
 
-For example:
-
 **Before**
 
 ```
-Explain neural networks.
+write a cover letter
 ```
 
-**After Context Engine**
+The panel asks one question: *What specific job are you applying for?* The user answers: *Junior data analyst role at a logistics company. I have a statistics degree, SQL and Python skills, and one internship where I built dashboards.*
+
+**After Context Engine** (site format)
 
 ```
-Explain neural networks to a beginner.
+## Task
 
-Structure the response with:
-- intuitive explanation
-- real-world analogy
-- simple mathematical intuition
-- practical applications
-- common misconceptions
-
-Avoid unnecessary jargon unless defined.
+Write a cover letter for a Junior Data Analyst role at a logistics company. I have a statistics degree, SQL and Python skills, and one internship where I built dashboards.
 ```
 
-The AI model remains exactly the same.
-
-Only the prompt becomes significantly better.
+The AI model stays the same. The refined prompt carries the user's details, so the answer is more specific and more personal.
 
 ---
 
 # Screenshots
 
-The examples below were captured on Gemini (a supported site) and on Google Flow (an unsupported site).
+The examples use a supported site and an unsupported site (Google Flow). The panel screenshots show the panel page opened in a browser tab.
 
-## A supported site: guided refinement
+## How the prompt improved
 
-The rough prompt is `explain how vaccines work`. The extension asks one clarifying question (answered here with `general public`) before it builds the refined prompt.
+Blue is what the user's answer added. Grey is the site format.
 
-![The extension asks one clarifying question about the audience](screenshots/02-clarifying-question.png)
+![How the rough prompt became the refined prompt](screenshots/11-prompt-improvement.png)
 
-When refinement finishes, the Prompt Ready card shows a short summary and a preview in the active site's format (Markdown headings for Gemini). Apply Prompt places the text in the site's input box. The user still presses Enter to send it.
+## The panel in use
 
-![Prompt Ready card and the refined prompt placed in Gemini's input box](screenshots/03-prompt-ready-applied.png)
+The panel asks its question and the user types an answer.
 
-## Before and after
+![The panel asks what job the cover letter is for](screenshots/06-cover-letter-question.png)
 
-The same topic sent to Gemini twice, in separate chats: first as the rough prompt, then as the refined prompt.
+The Prompt Ready card shows a summary and the refined prompt in the format of the active site.
 
-![Gemini's answer to the rough prompt](screenshots/04-rough-prompt-answer.png)
+![Prompt Ready card with the refined prompt](screenshots/07-cover-letter-prompt-ready.png)
 
-![Gemini's answer to the refined prompt](screenshots/05-refined-prompt-answer.png)
+Apply Prompt puts the text in the site's input box. The user presses Enter to send it.
 
-The answer to the refined prompt is much shorter. This is partly because the refined prompt asks for 1-2 sentences, a length limit that the refinement step added. Treat the pair as an illustration of how the prompt changes the answer, not as a measurement of answer quality.
+![The refined prompt in the site's input box](screenshots/08-cover-letter-applied.png)
 
-After the prompt is sent, the side panel recognises the existing chat and shows a one-sentence summary made by the on-device summarizer. These summaries are approximate.
+## How the answer improved
+
+The rough prompt gives a generic template with an invented name, invented contact details and blanks for the job, the experience and the achievements.
+
+![The AI's answer to the rough prompt](screenshots/09-cover-letter-rough-answer.png)
+
+The refined prompt gives a letter about the data analyst role, the logistics setting, the statistics degree, SQL, Python and the dashboards. The name, address and company are blanks because the user never gave them. The AI also adds achievements the user never mentioned, so the letter still needs checking.
+
+![The AI's answer to the refined prompt](screenshots/10-cover-letter-refined-answer.png)
+
+## More examples
+
+| Case | What the refiner changed | AI's answer |
+|------|--------------------------|-------------|
+| `plan a trip to Japan` | Asked about the budget. The reply added 10 days, April, two travellers and an interest in food and temples. The refined prompt is one short request that holds all of these. | Rough: a general 10 to 14 day route and a question about dates. Refined: a 10-day plan for two in April, built around food and temples, with costs. |
 
 ## An unsupported site
 
 On a site that is not Claude, ChatGPT, Gemini or Grok, the panel shows "Unsupported site" and uses a generic prompt structure. Refinement still works, but Apply Prompt does not insert text into the page, and no chat context is read.
 
 ![The side panel on an unsupported site (Google Flow)](screenshots/01-unsupported-site.png)
+
+---
+
+# Compared with asking an AI directly
+
+Another way to improve a prompt is to ask a cloud AI assistant: "improve this prompt". The same two rough prompts were tried that way, once alone and once with the details the user gave the panel.
+
+**Where Context Engine does better**
+
+- It asks one question and uses only the user's words. Nothing is left to fill in.
+- Asked "improve this prompt: write a cover letter", the assistant gave several options full of blanks (job title, company name, a pasted job description). With the details added, it still left blanks and added things the user never said: Tableau and Power BI, executive dashboards and a word limit.
+- It runs on the device, so the user's background is not sent to a cloud service for the rewrite. The final prompt still goes to the chat site when the user sends it.
+- The prompt is formatted for the site and inserted with one click.
+
+![The AI's reply when asked to improve "write a cover letter"](screenshots/12-ai-improve-prompt-reply.png)
+
+**Where it falls short**
+
+- Gemini Nano is a small model. The refined prompt mostly joins the user's details and adds little structure, such as a role or an output format.
+- For the trip plan, the assistant's improved prompt was better: a role, trip parameters, a budget definition, a route and priorities, with no blanks.
+- The panel's question is often generic. When the user already knows the details, asking a large assistant directly gives a richer prompt.
+- For the cover letter, the answers to both kinds of prompt were close. The panel saves effort and keeps details private. It does not give a better final answer.
+
+---
+
+# Known issues
+
+- The small model can still add details the user never gave, even though its instructions forbid it.
+- The same input can give different refined prompts.
 
 ---
 

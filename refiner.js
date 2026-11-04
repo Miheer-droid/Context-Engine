@@ -6,8 +6,21 @@ const REFINER_MODEL_OPTIONS = {
 const MAX_REFINEMENT_TURNS = 5;
 
 let runtimeKnowledgePromise = null;
-let refinerSession = null;
 let refinementTurns = 0;
+
+// Every model call gets a fresh session. Each request already carries the whole
+// conversation, so a shared session only repeated it and used up the small
+// context window.
+async function promptOnce(text, recordCreate) {
+  const createStartedAt = metricsNow();
+  const session = await LanguageModel.create(REFINER_MODEL_OPTIONS);
+  if (recordCreate) metricsRecordSessionCreate(metricsNow() - createStartedAt);
+  try {
+    return await session.prompt(text);
+  } finally {
+    session.destroy();
+  }
+}
 
 function loadRuntimeKnowledge() {
   if (!runtimeKnowledgePromise) {
@@ -23,8 +36,10 @@ function loadRuntimeKnowledge() {
   return runtimeKnowledgePromise;
 }
 
+// Whole-word match, so "vs" does not fire inside "canvas" or "nice" inside "Venice".
 function containsKeyword(text, keyword) {
-  return text.includes(keyword.toLowerCase());
+  const escaped = keyword.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`(^|[^a-z0-9])${escaped}($|[^a-z0-9])`).test(text);
 }
 
 function matchesRule(text, detect) {
@@ -150,7 +165,7 @@ function buildFinalRefinementRequest(conversationSoFar, instructions) {
     ? instructions.map((i) => `- ${i}`).join("\n")
     : "- Preserve the user's intent while making the task, context, and expected output clear.";
 
-  return `You are Context-Engine. Using the full conversation below (rough prompt, any clarifying questions you asked, and the user's answers), produce one clear, self-contained prompt the user can paste into another AI assistant. Do not answer the underlying request. Do not invent facts not present in the conversation.
+  return `You are Context-Engine. Using the full conversation below (rough prompt, any clarifying questions you asked, and the user's answers), produce one clear, self-contained prompt the user can paste into another AI assistant. Do not answer the underlying request. Use only details from the conversation: do not add length limits, tones, placeholders, code or facts that the user did not give.
 
 Apply these refinement instructions:
 ${guidance}
@@ -176,6 +191,33 @@ function tryParseJson(rawText) {
 let conversationLog = "";
 let userRounds = 0;
 let chatContextSummary = "";
+// The user's first message of the session. The rules are checked against this,
+// not against later answers to clarifying questions.
+let roughPromptText = "";
+
+// A small model sometimes drops an instruction it was given. These fragments are
+// short and fixed, so if the refined prompt left one out it is added here.
+const REQUIRED_PHRASES = {
+  fix_missing_stepwise_reasoning: {
+    present: /step[- ]by[- ]step/i,
+    append: "Think through this step by step before answering.",
+  },
+  grounding_fabrication_guard: {
+    present: /fabricat|not certain|guess/i,
+    append: "If you are not certain, say so instead of guessing. Do not fabricate sources, quotes, or statistics.",
+  },
+};
+
+function ensureRequiredPhrases(prompt, fragmentIds) {
+  let result = prompt.trim();
+  for (const fragmentId of fragmentIds) {
+    const required = REQUIRED_PHRASES[fragmentId];
+    if (required && !required.present.test(result)) {
+      result += (result ? " " : "") + required.append;
+    }
+  }
+  return result;
+}
 
 function setChatContextSummary(summary) {
   chatContextSummary = typeof summary === "string" ? summary.trim() : "";
@@ -192,16 +234,11 @@ async function startOrContinueRefinement(userInput) {
     conversationLog = `Existing chat context: ${chatContextSummary}`;
   }
   conversationLog += (conversationLog ? "\nUser: " : "User: ") + clean;
+  if (userRounds === 0) roughPromptText = clean;
   userRounds += 1;
 
-  if (!refinerSession) {
-    const createStartedAt = metricsNow();
-    refinerSession = await LanguageModel.create(REFINER_MODEL_OPTIONS);
-    metricsRecordSessionCreate(metricsNow() - createStartedAt);
-  }
-
   const checkStartedAt = metricsNow();
-  const checkRaw = await refinerSession.prompt(buildSelfCheckRequest(conversationLog));
+  const checkRaw = await promptOnce(buildSelfCheckRequest(conversationLog), true);
   metricsRecordSelfCheck(metricsNow() - checkStartedAt);
   refinementTurns += 1;
   const check = tryParseJson(checkRaw);
@@ -216,11 +253,11 @@ async function startOrContinueRefinement(userInput) {
   }
 
   const { rules, fragments } = await loadRuntimeKnowledge();
-  const triggeredRuleIds = findTriggeredRuleIds(clean, rules);
+  const triggeredRuleIds = findTriggeredRuleIds(roughPromptText, rules);
   const instructions = selectFragments(rules, fragments, triggeredRuleIds, []);
 
   const finalStartedAt = metricsNow();
-  const finalRaw = await refinerSession.prompt(buildFinalRefinementRequest(conversationLog, instructions));
+  const finalRaw = await promptOnce(buildFinalRefinementRequest(conversationLog, instructions), false);
   metricsRecordFinalRefine(metricsNow() - finalStartedAt);
   refinementTurns += 1;
   const parsedFinal = tryParseJson(finalRaw);
@@ -238,7 +275,10 @@ async function startOrContinueRefinement(userInput) {
   return {
     type: "ready",
     summary: final.summary || "Refined prompt ready - review the preview below.",
-    refinedPrompt: final.refinedPrompt || finalRaw.trim(),
+    refinedPrompt: ensureRequiredPhrases(
+      final.refinedPrompt || finalRaw.trim(),
+      triggeredRuleIds.map((ruleId) => rules[ruleId].fragmentId)
+    ),
     turn: refinementTurns,
     userRounds,
   };
@@ -246,10 +286,7 @@ async function startOrContinueRefinement(userInput) {
 
 function resetRefinementSession() {
   conversationLog = "";
+  roughPromptText = "";
   refinementTurns = 0;
   userRounds = 0;
-  if (refinerSession) {
-    refinerSession.destroy();
-    refinerSession = null;
-  }
 }

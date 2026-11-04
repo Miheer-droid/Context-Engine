@@ -17,11 +17,13 @@
 // without notice, so treat these as a starting point: if "Apply Prompt"
 // reports it can't find the input, open DevTools on the real site, inspect
 // the prompt box, and update the selector here.
+// Each site lists its selectors from most to least specific. The page-side
+// function uses the first selector that matches a visible, editable element.
 const INJECTOR_TARGETS = {
-  claude: { selector: 'div[contenteditable="true"]', kind: "contenteditable" },
-  chatgpt: { selector: "#prompt-textarea", kind: "contenteditable" },
-  gemini: { selector: 'div[contenteditable="true"]', kind: "contenteditable" },
-  grok: { selector: "textarea", kind: "textarea" },
+  claude: { selectors: ['div[contenteditable="true"][role="textbox"]', 'div.ProseMirror[contenteditable="true"]', 'div[contenteditable="true"]'] },
+  chatgpt: { selectors: ["#prompt-textarea", 'div.ProseMirror[contenteditable="true"]', "textarea"] },
+  gemini: { selectors: ['rich-textarea div[contenteditable="true"]', 'div[contenteditable="true"][role="textbox"]', 'div[contenteditable="true"]'] },
+  grok: { selectors: ['div.ProseMirror[contenteditable="true"]', "textarea", 'div[contenteditable="true"]'] },
 };
 
 function getInjectorTarget(siteId) {
@@ -30,17 +32,41 @@ function getInjectorTarget(siteId) {
 
 // --- page-side: runs inside the target tab, not the side panel ---
 function pageSideApplyPrompt(refinedPrompt, targetInfo) {
-  const element = document.querySelector(targetInfo.selector);
+  // Pages often hold hidden or read-only copies of an input (and sometimes an
+  // edit box on an older message), so only visible, editable elements count.
+  // If several match, the last one is the composer at the bottom of the page.
+  function isUsable(candidate) {
+    const rect = candidate.getBoundingClientRect();
+    const style = getComputedStyle(candidate);
+    return (
+      rect.width > 0 &&
+      rect.height > 0 &&
+      style.visibility !== "hidden" &&
+      style.display !== "none" &&
+      !candidate.disabled &&
+      !candidate.readOnly
+    );
+  }
+
+  let element = null;
+  for (const selector of targetInfo.selectors) {
+    const matches = [...document.querySelectorAll(selector)].filter(isUsable);
+    if (matches.length) {
+      element = matches[matches.length - 1];
+      break;
+    }
+  }
+
   if (!element) {
     return {
       ok: false,
-      reason: `No element matched selector "${targetInfo.selector}" on this page. The site's layout may have changed.`,
+      reason: `No visible input box matched (${targetInfo.selectors.join(", ")}). The site's layout may have changed.`,
     };
   }
 
   element.focus();
 
-  if (targetInfo.kind === "textarea") {
+  if (element.tagName === "TEXTAREA" || element.tagName === "INPUT") {
     // A plain <textarea>/<input> under React or Vue tracks its value
     // through a property setter defined on the prototype, not through the
     // DOM attribute. Setting element.value directly leaves the framework's

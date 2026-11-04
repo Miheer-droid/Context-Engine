@@ -16,7 +16,7 @@
       "triggeredBy": ["multiple_tasks"]
     },
     "fix_no_format_specified": {
-      "text": "Specify the exact output length and structure (e.g., a word or sentence count, headings, a bullet list, or plain prose).",
+      "text": "The user did not state a length or format. Do not invent a word, sentence or paragraph count. Keep any format the user did state.",
       "sourceFile": "knowledge/patterns.md",
       "triggeredBy": ["no_format_specified"]
     },
